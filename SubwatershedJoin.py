@@ -1,25 +1,33 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Oct  1 13:17:22 2024
+Created on Wed Nov 20 14:05:36 2024
 
 @author: Ashton.Eaves
 """
+
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point, LineString, MultiLineString
 from collections import deque
 
-
-# Load the streamlines and start points data
-streamlines = gpd.read_file(r"C:/2_Workspaces/Python/Streams/StreamNetwork_v1_All.shp")
+# Load the streamlines, start points, and subwatersheds data
 start_points = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/eDNA_Sites/eDNA_Sites_All.shp")
+streamlines = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_10km_All3.shp")
+subwatersheds = gpd.read_file(r"C:/2_Workspaces/Python/Subwatersheds/Subwatersheds_v1.shp")
 
 # Create a buffer of 60 meters around the start points
 start_points_buffered = start_points.copy()
 start_points_buffered['geometry'] = start_points_buffered.geometry.buffer(60)
 
+# Perform the spatial join using the buffered start points
+intersection_check = gpd.sjoin(streamlines, start_points_buffered[['Site', 'geometry']], how='inner', predicate='intersects')
+
+# Ensure the CRS matches between streamlines and subwatersheds
+if streamlines.crs != subwatersheds.crs:
+    subwatersheds = subwatersheds.to_crs(streamlines.crs)
+
 # Initialize a list to store results
-all_upstream_streamlines = []
+all_upstream_subwatersheds = []
 
 # Function to calculate length of a streamline
 def calculate_length(geom):
@@ -32,23 +40,20 @@ def calculate_length(geom):
 # Loop through each site to create a separate trace
 for site_index, site_row in start_points_buffered.iterrows():
     # Check intersection between streamlines and buffered start points for each site
-    intersection_check = gpd.sjoin(streamlines, gpd.GeoDataFrame([site_row], crs=start_points.crs), how='inner', predicate='intersects')
+    intersection_check = gpd.sjoin(streamlines, gpd.GeoDataFrame([site_row], crs=start_points_buffered.crs), how='inner', predicate='intersects')
 
     if intersection_check.empty:
+        print(f"No streamlines intersect for site: {site_row['Site']}")
         continue
 
     # Initialize a set to track visited streamlines and a deque for upstream traversal
     visited_indices = set(intersection_check.index)
     queue = deque([(index, 0, site_row['Site']) for index in intersection_check.index])  # Track index, cumulative distance, and 'Site'
-    
+
     # Perform upstream tracing for each site
     while queue:
         current_index, cumulative_distance, site = queue.popleft()
         current_streamline = streamlines.loc[current_index]
-
-        # Check if cumulative distance exceeds 10 km. Comment out if not necessary.
-       # if cumulative_distance > 10000:  # 10 km in meters
-       #     continue
 
         # Get the start point of the current streamline
         if isinstance(current_streamline.geometry, LineString):
@@ -73,20 +78,36 @@ for site_index, site_row in start_points_buffered.iterrows():
                 visited_indices.add(idx)
                 distance = calculate_length(upstream_candidates.loc[idx].geometry)
                 queue.append((idx, cumulative_distance + distance, site))
-    
+
     # Create a GeoDataFrame of the upstream streamlines for this site
     upstream_streamlines = streamlines.loc[list(visited_indices)]
     upstream_streamlines['Site'] = site_row['Site']  # Assign the site to the traced streamlines
 
-    # Append to the final result
-    all_upstream_streamlines.append(upstream_streamlines)
+    # Perform a spatial join between the upstream streamlines and subwatersheds
+    upstream_with_subwatersheds = gpd.sjoin(upstream_streamlines, subwatersheds, how='left', predicate='intersects')
 
-# Concatenate all upstream streamlines for all sites
-final_upstream_streamlines = gpd.GeoDataFrame(pd.concat(all_upstream_streamlines, ignore_index=True), crs=streamlines.crs)
+    if upstream_with_subwatersheds.empty:
+        print(f"No subwatershed join for site: {site_row['Site']}")
+    else:
+        print(f"Subwatershed join successful for site: {site_row['Site']}")
 
-# Save the result
-output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_Full.shp"
-final_upstream_streamlines.to_file(output_path, driver='ESRI Shapefile')
+    # Append the result to the final list if the spatial join was successful
+    all_upstream_subwatersheds.append(upstream_with_subwatersheds)
+
+# Check if any upstream subwatersheds were collected
+if not all_upstream_subwatersheds:
+    print("No upstream subwatersheds found.")
+else:
+    # Concatenate all upstream streamlines with subwatersheds for all sites
+    final_upstream_subwatersheds = gpd.GeoDataFrame(pd.concat(all_upstream_subwatersheds, ignore_index=True), crs=streamlines.crs)
+
+    # Save the result
+    output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Subwatersheds_10km.shp"
+    final_upstream_subwatersheds.to_file(output_path, driver='ESRI Shapefile')
+
+    print(f"Saved to: {output_path}")
+
+
 
 
 #### END ####
