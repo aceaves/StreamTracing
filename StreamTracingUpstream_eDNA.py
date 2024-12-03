@@ -12,7 +12,7 @@ from collections import deque
 
 # Load the streamlines and start points data
 streamlines = gpd.read_file(r"C:/2_Workspaces/Python/Streams/StreamNetwork_v1_All.shp")
-start_points = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/eDNA_Sites/eDNA_Sites_All.shp")
+start_points = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/eDNA_SitesTest3.shp")
 
 # Create a buffer of 60 meters around the start points
 start_points_buffered = start_points.copy()
@@ -85,7 +85,7 @@ for site_index, site_row in start_points_buffered.iterrows():
 final_upstream_streamlines = gpd.GeoDataFrame(pd.concat(all_upstream_streamlines, ignore_index=True), crs=streamlines.crs)
 
 # Save the result
-output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_Full.shp"
+output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_Test3.shp"
 final_upstream_streamlines.to_file(output_path, driver='ESRI Shapefile')
 
 

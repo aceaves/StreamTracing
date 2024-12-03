@@ -6,6 +6,10 @@ Created on Wed Nov 20 14:05:36 2024
 """
 import geopandas as gpd
 import pandas as pd
+import time  # Import the time module
+
+# Start the timer
+start_time = time.time()
 
 # Load the streamlines and subwatersheds data
 streamlines = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_10km_All3.shp")
@@ -74,6 +78,8 @@ if all_upstream_subwatersheds:
 else:
     print("No upstream subwatersheds found.")
 
-
+# End of script, log total execution time
+end_time = time.time()
+print(f"Total execution time: {end_time - start_time:.2f} seconds")
 
 #### END ####
