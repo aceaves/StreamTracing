@@ -12,7 +12,7 @@ import time  # Import the time module
 start_time = time.time()
 
 # Load the streamlines and subwatersheds data
-streamlines = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_10km_All3.shp")
+streamlines = gpd.read_file(r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_TotCatch_Marcus2.shp")
 subwatersheds = gpd.read_file(r"C:/2_Workspaces/Python/Subwatersheds/Subwatersheds_v1.shp")
 
 # Buffer the streamlines by 10 meters to ensure capturing subwatersheds near the streamlines
@@ -63,7 +63,7 @@ if all_upstream_subwatersheds:
     )
 
     # Save individual subwatersheds output
-    output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Subwatersheds_10km2.shp"
+    output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Subwatersheds_TotalCatch.shp"
     final_upstream_subwatersheds.to_file(output_path, driver='ESRI Shapefile')
     print(f"Saved individual subwatersheds to: {output_path}")
 

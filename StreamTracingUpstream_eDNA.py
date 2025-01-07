@@ -8,6 +8,10 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point, LineString, MultiLineString
 from collections import deque
+import time  # Import the time module
+
+# Start the timer
+start_time = time.time()
 
 
 # Load the streamlines and start points data
@@ -87,6 +91,10 @@ final_upstream_streamlines = gpd.GeoDataFrame(pd.concat(all_upstream_streamlines
 # Save the result
 output_path = r"C:/2_Workspaces/Python/eDNA_ExtremeWeather/Outputs/eDNA_Upstream_Streamlines_Test3.shp"
 final_upstream_streamlines.to_file(output_path, driver='ESRI Shapefile')
+
+# End of script, log total execution time
+end_time = time.time()
+print(f"Total execution time: {end_time - start_time:.2f} seconds")
 
 
 #### END ####
